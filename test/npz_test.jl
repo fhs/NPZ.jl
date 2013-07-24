@@ -17,8 +17,8 @@ TestArrays = {
 	uint64(42),
 	float32(3.1415),
 	float64(3.1415),
-	#complex64(1, 7),	# TODO: https://github.com/JuliaLang/julia/issues/3815
-	#complex128(1, 7),
+	complex64(1, 7),
+	complex128(1, 7),
 	Bool[0, 1, 0, 1, 1, 0],
 	Int8[-42, 0, 1, 2, 3, 4],
 	Int16[-42, 0, 1, 2, 3, 4],
