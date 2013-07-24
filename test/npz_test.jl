@@ -38,7 +38,7 @@ TestArrays = {
 
 # Write a NPZ file with all the test arrays and numbers,
 # and read it back in.
-old = (String => Union(Array,Number))[]
+old = (String => Any)[]
 for (i, x) in enumerate(TestArrays)
 	old["testvar_" * dec(i)] = x
 end

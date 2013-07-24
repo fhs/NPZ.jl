@@ -197,7 +197,7 @@ function npzread(filename::String)
 end
 
 function npzread(dir::ZipFile.Dir)
-	vars = (String => Union(Array,Number))[]
+	vars = (String => Any)[]
 	for f in dir.files
 		b = ZipFile.readbytes(f)
 		buf = IOBuffer()
@@ -246,13 +246,13 @@ function npzwritearray{T<:Number}(f::IO, x::T)
 	npzwritearray(f, reinterpret(Uint8, [x]), T, Int[])
 end
 
-function npzwrite(filename::String, x::Union(Array,Number))
+function npzwrite(filename::String, x)
 	f = open(filename, "w")
 	npzwritearray(f, x)
 	close(f)
 end
 
-function npzwrite(filename::String, vars::Dict{String,Union(Array,Number)})
+function npzwrite{S<:String}(filename::String, vars::Dict{S,Any})
 	dir = ZipFile.open(filename, true)
 	for (k, v) in vars
 		f = ZipFile.addfile(dir, k * ".npy")
