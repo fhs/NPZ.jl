@@ -2,6 +2,7 @@ using Base.Test
 using NPZ
 
 tmp = mktempdir()
+println("temporary directory: $tmp")
 
 TestArrays = {
 	true,
@@ -16,8 +17,8 @@ TestArrays = {
 	uint64(42),
 	float32(3.1415),
 	float64(3.1415),
-	complex64(1, 7),
-	complex128(1, 7),
+	#complex64(1, 7),	# TODO: https://github.com/JuliaLang/julia/issues/3815
+	#complex128(1, 7),
 	Bool[0, 1, 0, 1, 1, 0],
 	Int8[-42, 0, 1, 2, 3, 4],
 	Int16[-42, 0, 1, 2, 3, 4],
@@ -35,13 +36,28 @@ TestArrays = {
 	[i-j+k for i in 1:3, j in 1:4, k in 1:5],
 }
 
+# Write a NPZ file with all the test arrays and numbers,
+# and read it back in.
+old = (String => Union(Array,Number))[]
+for (i, x) in enumerate(TestArrays)
+	old["testvar_" * dec(i)] = x
+end
+NPZ.npzwrite("$tmp/big.npz", old)
+new = NPZ.npzread("$tmp/big.npz")
+for (k, v) in old
+	@test v == new[k]
+end
+@test old == new
+
+
+# Write and then read NPY files for each array
 for x in TestArrays
-	println("$(typeof(x)) $(size(x))")
-	npzwrite("test.npy", x)
-	y = npzread("test.npy")
+	npzwrite("$tmp/test.npy", x)
+	y = npzread("$tmp/test.npy")
 	@test typeof(x) == typeof(y)
 	@test size(x) == size(y)
 	@test x == y
 end
+
 
 run(`rm -rf $tmp`)

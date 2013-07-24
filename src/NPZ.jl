@@ -3,9 +3,12 @@ module NPZ
 # NPZ file format is described in
 # https://github.com/numpy/numpy/blob/v1.7.0/numpy/lib/format.py
 
+using ZipFile
+
 export npzread, npzwrite
 
-const Magic = Uint8[0x93, 'N', 'U', 'M', 'P', 'Y']
+const NPYMagic = Uint8[0x93, 'N', 'U', 'M', 'P', 'Y']
+const ZIPMagic = Uint8['P', 'K', 3, 4]
 const Version = Uint8[1, 0]
 
 const TypeMaps = [
@@ -26,9 +29,9 @@ const TypeMaps = [
 Numpy2Julia = [s => t for (s, t) in TypeMaps]
 Julia2Numpy = [t => s for (s, t) in TypeMaps]
 
-readle(ios::IOStream, ::Type{Uint16}) = htol(read(ios, Uint16))
+readle(ios::IO, ::Type{Uint16}) = htol(read(ios, Uint16))
 
-function writele(ios::IOStream, x::Vector{Uint8})
+function writele(ios::IO, x::Vector{Uint8})
 	n = write(ios, x)
 	if n != length(x)
 		error("short write")
@@ -36,8 +39,8 @@ function writele(ios::IOStream, x::Vector{Uint8})
 	n
 end
 
-writele(ios::IOStream, x::ASCIIString) = writele(ios, convert(Vector{Uint8}, x))
-writele(ios::IOStream, x::Uint16) = writele(ios, reinterpret(Uint8, [htol(x)]))
+writele(ios::IO, x::ASCIIString) = writele(ios, convert(Vector{Uint8}, x))
+writele(ios::IO, x::Uint16) = writele(ios, reinterpret(Uint8, [htol(x)]))
 
 function parsechar(s::ASCIIString, c::Char)
 	if s[1] != c
@@ -148,10 +151,9 @@ function parseheader(s::ASCIIString)
 	Header(dict["descr"], dict["fortran_order"], dict["shape"])
 end
 
-function npzread(filename::String)
-	f = open(filename)
-	b = read(f, Uint8, length(Magic))
-	if b != Magic
+function npzreadarray(f::IO)
+	b = read(f, Uint8, length(NPYMagic))
+	if b != NPYMagic
 		error("not a numpy array file")
 	end
 	b = read(f, Uint8, length(Version))
@@ -171,17 +173,51 @@ function npzread(filename::String)
 			x = permutedims(x, [ndims(x):-1:1])
 		end
 	end
-	
-	close(f)
 	x
 end
 
-function npzwrite(filename::String, x::Array{Uint8}, T::DataType, shape::Vector{Int})
+function npzread(filename::String)
+	# Detect if the file is a numpy npy array file or a npz/zip file.
+	f = open(filename)
+	b = read(f, Uint8, max(length(NPYMagic), length(ZIPMagic)))
+	if beginswith(b, ZIPMagic)
+		close(f)
+		f = ZipFile.open(filename)
+		data = npzread(f)
+		close(f)
+		return data
+	end
+	if beginswith(b, NPYMagic)
+		seekstart(f)
+		data = npzreadarray(f)
+		close(f)
+		return data
+	end
+	error("not a NPY or NPZ/Zip file: $filename")
+end
+
+function npzread(dir::ZipFile.Dir)
+	vars = (String => Union(Array,Number))[]
+	for f in dir.files
+		b = ZipFile.readbytes(f)
+		buf = IOBuffer()
+		write(buf, b)
+		seekstart(buf)
+		name = f.name
+		if endswith(name, ".npy")
+			name = name[1:end-4]
+		end
+		vars[name] = npzreadarray(buf)
+		close(buf)
+	end
+	vars
+end
+
+function npzwritearray(f::IO, x::Array{Uint8}, T::DataType, shape::Vector{Int})
 	if !haskey(Julia2Numpy, T)
 		error("unsupported type $T")
 	end
-	f = open(filename, "w")
-	writele(f, Magic)
+	writele(f, NPYMagic)
 	writele(f, Version)
 	
 	descr =  (ENDIAN_BOM == 0x01020304 ? ">" : "<") * Julia2Numpy[T]
@@ -189,7 +225,7 @@ function npzwrite(filename::String, x::Array{Uint8}, T::DataType, shape::Vector{
 	
 	# The dictionary is padded with enough whitespace so that
 	# the array data is 16-byte aligned
-	n = length(Magic)+length(Version)+2+length(dict)
+	n = length(NPYMagic)+length(Version)+2+length(dict)
 	pad = (div(n+16-1, 16)*16) - n
 	if pad > 0
 		dict *= " "^(pad-1) * "\n"
@@ -197,17 +233,38 @@ function npzwrite(filename::String, x::Array{Uint8}, T::DataType, shape::Vector{
 	
 	writele(f, uint16(length(dict)))
 	writele(f, dict)
-	write(f, x)
+	if write(f, x) != length(x)
+		error("short write")
+	end
+end
+
+function npzwritearray{T}(f::IO, x::Array{T})
+	npzwritearray(f, reinterpret(Uint8, x[:]), T, [i for i in size(x)])
+end
+
+function npzwritearray{T<:Number}(f::IO, x::T)
+	npzwritearray(f, reinterpret(Uint8, [x]), T, Int[])
+end
+
+function npzwrite(filename::String, x::Union(Array,Number))
+	f = open(filename, "w")
+	npzwritearray(f, x)
 	close(f)
 end
 
-function npzwrite{T}(filename::String, x::Array{T})
-	npzwrite(filename, reinterpret(Uint8, x[:]), T, [i for i in size(x)])
+function npzwrite(filename::String, vars::Dict{String,Union(Array,Number)})
+	dir = ZipFile.open(filename, true)
+	for (k, v) in vars
+		f = ZipFile.addfile(dir, k * ".npy")
+		buf = IOBuffer()
+		npzwritearray(buf, v)
+		b = takebuf_array(buf)
+		if write(f, b) != length(b)
+			error("short write")
+		end
+		close(buf)
+	end
+	close(dir)
 end
-
-function npzwrite{T<:Number}(filename::String, x::T)
-	npzwrite(filename, reinterpret(Uint8, [x]), T, Int[])
-end
-
 
 end	# module
