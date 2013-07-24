@@ -1,6 +1,6 @@
 ## Overview
 
-The NPZ package provides support for reading and writing Numpy .npy or
+The NPZ package provides support for reading and writing Numpy .npy and
 .npz files in Julia.
 
 An .npy file contains a single numpy array, stored in a binary
