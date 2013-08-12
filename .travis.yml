@@ -1,0 +1,17 @@
+language: cpp
+compiler:
+    - clang
+notifications:
+    email: false
+before_install:
+    - sudo add-apt-repository ppa:staticfloat/julia-deps -y
+    - sudo add-apt-repository ppa:staticfloat/julianightlies -y
+    - sudo apt-get update -qq -y
+    - sudo apt-get install libpcre3-dev julia -y
+    - git config --global user.name "Travis User"
+    - git config --global user.email "travis@example.net"
+script:
+    - julia -e 'Pkg.init(); Pkg.add(Pkg.VersionSet("ZipFile", [v"0.1.0"]))'
+    - mkdir -p ~/.julia/NPZ
+    - cp -R ./* ~/.julia/NPZ/
+    - julia ~/.julia/NPZ/test/npz_test.jl

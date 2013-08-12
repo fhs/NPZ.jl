@@ -10,6 +10,8 @@ ZIP file.  For more information, see the `numpy.save`, `numpy.savez`,
 `numpy.savez_compressed`, and `numpy.load` functions in the [Numpy
 documentation](http://docs.scipy.org/doc/numpy/reference/routines.io.html#npz-files).
 
+[![Build Status](https://travis-ci.org/fhs/NPZ.jl.png)](https://travis-ci.org/fhs/NPZ.jl)
+
 ## Installation
 
 Install via the Julia package manager, `Pkg.add("NPZ")`.
