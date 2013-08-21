@@ -199,16 +199,11 @@ end
 function npzread(dir::ZipFile.Reader)
 	vars = (String => Any)[]
 	for f in dir.files
-		b = ZipFile.readbytes(f)
-		buf = IOBuffer()
-		write(buf, b)
-		seekstart(buf)
 		name = f.name
 		if endswith(name, ".npy")
 			name = name[1:end-4]
 		end
-		vars[name] = npzreadarray(buf)
-		close(buf)
+		vars[name] = npzreadarray(f)
 	end
 	vars
 end
@@ -256,13 +251,8 @@ function npzwrite{S<:String}(filename::String, vars::Dict{S,Any})
 	dir = ZipFile.Writer(filename)
 	for (k, v) in vars
 		f = ZipFile.addfile(dir, k * ".npy")
-		buf = IOBuffer()
-		npzwritearray(buf, v)
-		b = takebuf_array(buf)
-		if write(f, b) != length(b)
-			error("short write")
-		end
-		close(buf)
+		npzwritearray(f, v)
+		close(f)
 	end
 	close(dir)
 end

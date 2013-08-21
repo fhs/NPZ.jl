@@ -1,8 +1,12 @@
 using Base.Test
 using NPZ
 
+Debug = false
+
 tmp = mktempdir()
-println("temporary directory: $tmp")
+if Debug
+	println("temporary directory: $tmp")
+end
 
 TestArrays = {
 	true,
@@ -42,8 +46,9 @@ old = (String => Any)[]
 for (i, x) in enumerate(TestArrays)
 	old["testvar_" * dec(i)] = x
 end
-NPZ.npzwrite("$tmp/big.npz", old)
-new = NPZ.npzread("$tmp/big.npz")
+filename = "$tmp/big.npz"
+npzwrite(filename, old)
+new = npzread(filename)
 for (k, v) in old
 	@test v == new[k]
 end
@@ -52,12 +57,15 @@ end
 
 # Write and then read NPY files for each array
 for x in TestArrays
-	npzwrite("$tmp/test.npy", x)
-	y = npzread("$tmp/test.npy")
+	filename = "$tmp/test.npy"
+	npzwrite(filename, x)
+	y = npzread(filename)
 	@test typeof(x) == typeof(y)
 	@test size(x) == size(y)
 	@test x == y
 end
 
 
-run(`rm -rf $tmp`)
+if !Debug
+	run(`rm -rf $tmp`)
+end
