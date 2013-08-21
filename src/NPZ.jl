@@ -182,7 +182,7 @@ function npzread(filename::String)
 	b = read(f, Uint8, max(length(NPYMagic), length(ZIPMagic)))
 	if beginswith(b, ZIPMagic)
 		close(f)
-		f = ZipFile.open(filename)
+		f = ZipFile.Reader(filename)
 		data = npzread(f)
 		close(f)
 		return data
@@ -196,7 +196,7 @@ function npzread(filename::String)
 	error("not a NPY or NPZ/Zip file: $filename")
 end
 
-function npzread(dir::ZipFile.Dir)
+function npzread(dir::ZipFile.Reader)
 	vars = (String => Any)[]
 	for f in dir.files
 		b = ZipFile.readbytes(f)
@@ -253,7 +253,7 @@ function npzwrite(filename::String, x)
 end
 
 function npzwrite{S<:String}(filename::String, vars::Dict{S,Any})
-	dir = ZipFile.open(filename, true)
+	dir = ZipFile.Writer(filename)
 	for (k, v) in vars
 		f = ZipFile.addfile(dir, k * ".npy")
 		buf = IOBuffer()
