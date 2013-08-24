@@ -1,4 +1,4 @@
-CRC32.jl is licensed under the MIT License:
+NPZ.jl is licensed under the MIT License:
 
 > Copyright (c) 2013: Fazlul Shahriar
 > 

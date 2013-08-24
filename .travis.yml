@@ -11,8 +11,7 @@ before_install:
     - git config --global user.name "Travis User"
     - git config --global user.email "travis@example.net"
 script:
-    - julia -e 'Pkg.init(); Pkg.add("ZipFile", v"0.1.0")'
-    - sh -c 'cd ~/.julia/ZipFile && git checkout 017a6f50b4c46967a359c09c42bcbba9a93a02d6'
+    - julia -e 'Pkg.init(); Pkg.add("ZipFile", v"0.2.0")'
     - mkdir -p ~/.julia/NPZ
     - cp -R ./* ~/.julia/NPZ/
     - julia ~/.julia/NPZ/test/test.jl
