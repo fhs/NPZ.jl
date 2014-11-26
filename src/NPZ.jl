@@ -4,6 +4,7 @@ module NPZ
 # https://github.com/numpy/numpy/blob/v1.7.0/numpy/lib/format.py
 
 using ZipFile
+using Compat
 
 export npzread, npzwrite
 
@@ -120,7 +121,7 @@ end
 function parseheader(s::ASCIIString)
 	s = parsechar(s, '{')
 	
-	dict = (ASCIIString => Any)[]
+	dict = @compat Dict{ASCIIString,Any}()
 	for _ in 1:3
 		s = strip(s)
 		key, s = parsestring(s)
@@ -197,7 +198,7 @@ function npzread(filename::String)
 end
 
 function npzread(dir::ZipFile.Reader)
-	vars = (String => Any)[]
+	vars = @compat Dict{String,Any}()
 	for f in dir.files
 		name = f.name
 		if endswith(name, ".npy")
