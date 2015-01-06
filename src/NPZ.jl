@@ -181,14 +181,14 @@ function npzread(filename::String)
 	# Detect if the file is a numpy npy array file or a npz/zip file.
 	f = open(filename)
 	b = read(f, Uint8, max(length(NPYMagic), length(ZIPMagic)))
-	if beginswith(b, ZIPMagic)
+	if startswith(b, ZIPMagic)
 		close(f)
 		f = ZipFile.Reader(filename)
 		data = npzread(f)
 		close(f)
 		return data
 	end
-	if beginswith(b, NPYMagic)
+	if startswith(b, NPYMagic)
 		seekstart(f)
 		data = npzreadarray(f)
 		close(f)
