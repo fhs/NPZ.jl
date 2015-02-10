@@ -83,7 +83,7 @@ function parsetuple(s::ASCIIString)
 			break
 		end
 		n, s = parseinteger(s)
-		tup = [tup, n]
+		tup = [tup; n]
 		s = strip(s)
 		if s[1] == ')'
 			break
