@@ -30,6 +30,15 @@ const TypeMaps = [
 Numpy2Julia = [s => t for (s, t) in TypeMaps]
 Julia2Numpy = [t => s for (s, t) in TypeMaps]
 
+# Julia2Numpy is a dictionary that uses Types as keys.
+# This is problematic for precompilation because the
+# hash of a Type changes everytime Julia is run.
+# The hash of the keys when NPZ is precompiled will
+# not be the same as when it is later run. This can
+# be fixed by rehashing the Dict when the module is
+# loaded.
+__init__() = Base.rehash!(Julia2Numpy)
+
 readle(ios::IO, ::Type{Uint16}) = htol(read(ios, Uint16))
 
 function writele(ios::IO, x::Vector{Uint8})
