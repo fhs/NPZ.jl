@@ -79,7 +79,7 @@ end
 
 function parseinteger(s::ASCIIString)
 	i = findfirst(c -> !isdigit(c), s)
-	n = parseint(s[1:i-1])
+	n = parse(Int, s[1:i-1])
 	n, s[i:end]
 end
 
@@ -122,14 +122,14 @@ function parsedtype(s::ASCIIString)
 end
 
 type Header
-	descr :: (Function, DataType)
+	descr :: @compat(Tuple{Function, DataType})
 	fortran_order :: Bool
 	shape :: Vector{Int}
 end
 
 function parseheader(s::ASCIIString)
 	s = parsechar(s, '{')
-	
+
 	dict = @compat Dict{ASCIIString,Any}()
 	for _ in 1:3
 		s = strip(s)
@@ -173,7 +173,7 @@ function npzreadarray(f::IO)
 	hdrlen = readle(f, Uint16)
 	hdr = ascii(read(f, Uint8, hdrlen))
 	hdr = parseheader(strip(hdr))
-	
+
 	toh, typ = hdr.descr
 	if hdr.fortran_order
 		x = map(toh, read(f, typ, hdr.shape...))
@@ -224,10 +224,10 @@ function npzwritearray(f::IO, x::Array{Uint8}, T::DataType, shape::Vector{Int})
 	end
 	writele(f, NPYMagic)
 	writele(f, Version)
-	
+
 	descr =  (ENDIAN_BOM == 0x01020304 ? ">" : "<") * Julia2Numpy[T]
 	dict = "{'descr': '$descr', 'fortran_order': True, 'shape': $(tuple(shape...)), }"
-	
+
 	# The dictionary is padded with enough whitespace so that
 	# the array data is 16-byte aligned
 	n = length(NPYMagic)+length(Version)+2+length(dict)
@@ -235,8 +235,8 @@ function npzwritearray(f::IO, x::Array{Uint8}, T::DataType, shape::Vector{Int})
 	if pad > 0
 		dict *= " "^(pad-1) * "\n"
 	end
-	
-	writele(f, uint16(length(dict)))
+
+	writele(f, Uint16(length(dict)))
 	writele(f, dict)
 	if write(f, x) != length(x)
 		error("short write")

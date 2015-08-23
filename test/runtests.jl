@@ -8,21 +8,21 @@ if Debug
 	println("temporary directory: $tmp")
 end
 
-TestArrays = {
+TestArrays = Any[
 	true,
 	false,
-	int8(-42),
-	int16(-42),
-	int32(-42),
-	int64(-42),
-	uint8(42),
-	uint16(42),
-	uint32(42),
-	uint64(42),
-	float32(3.1415),
-	float64(3.1415),
-	complex64(1, 7),
-	complex128(1, 7),
+	Int8(-42),
+	Int16(-42),
+	Int32(-42),
+	Int64(-42),
+	Uint8(42),
+	Uint16(42),
+	Uint32(42),
+	Uint64(42),
+	Float32(3.1415),
+	Float64(3.1415),
+	Complex64(1, 7),
+	Complex128(1, 7),
 	Bool[0, 1, 0, 1, 1, 0],
 	Int8[-42, 0, 1, 2, 3, 4],
 	Int16[-42, 0, 1, 2, 3, 4],
@@ -38,11 +38,11 @@ TestArrays = {
 	Complex128[1+2im, 3, 4+5im, 6im, 7+8im],
 	[i-j for i in 1:3, j in 1:5],
 	[i-j+k for i in 1:3, j in 1:4, k in 1:5],
-}
+]
 
 # Write a NPZ file with all the test arrays and numbers,
 # and read it back in.
-old = (String => Any)[]
+old = Dict{String, Any}()
 for (i, x) in enumerate(TestArrays)
 	old["testvar_" * dec(i)] = x
 end
