@@ -37,7 +37,10 @@ Julia2Numpy = [t => s for (s, t) in TypeMaps]
 # not be the same as when it is later run. This can
 # be fixed by rehashing the Dict when the module is
 # loaded.
-__init__() = Base.rehash!(Julia2Numpy)
+
+if VERSION >= v"0.4.0" 
+	__init__() = Base.rehash!(Julia2Numpy)
+end
 
 readle(ios::IO, ::Type{UInt16}) = htol(read(ios, UInt16))
 
