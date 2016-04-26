@@ -83,6 +83,9 @@ end
 function parseinteger(s::ASCIIString)
 	i = findfirst(c -> !isdigit(c), s)
 	n = parse(Int, s[1:i-1])
+	if s[i] == 'L'
+		i += 1
+	end
 	n, s[i:end]
 end
 
