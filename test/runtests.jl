@@ -1,5 +1,6 @@
 using Base.Test
 using NPZ, Compat
+import Compat.String
 
 Debug = false
 
@@ -19,6 +20,7 @@ TestArrays = Any[
 	@compat(UInt16(42)),
 	@compat(UInt32(42)),
 	@compat(UInt64(42)),
+    @compat(Float16(3.1415)),
 	@compat(Float32(3.1415)),
 	@compat(Float64(3.1415)),
 	@compat(Complex64(1, 7)),
@@ -34,6 +36,7 @@ TestArrays = Any[
 	UInt64[0, 1, 2, 3, 4],
 	Float64[-42, 0, 1, 2, 3.14, 4],
 	Float32[-42, 0, 1, 2, 3.14, 4],
+    Float16[-42, 0, 1, 2, 3.14, 4],
 	Complex64[1+2im, 3, 4+5im, 6im, 7+8im],
 	Complex128[1+2im, 3, 4+5im, 6im, 7+8im],
 	[i-j for i in 1:3, j in 1:5],
@@ -42,7 +45,7 @@ TestArrays = Any[
 
 # Write a NPZ file with all the test arrays and numbers,
 # and read it back in.
-old = Dict{UTF8String, Any}()
+old = Dict{String, Any}()
 for (i, x) in enumerate(TestArrays)
 	old["testvar_" * dec(i)] = x
 end
