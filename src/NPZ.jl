@@ -6,6 +6,8 @@ module NPZ
 using ZipFile
 using Compat
 
+import Compat.String
+
 export npzread, npzwrite
 
 const NPYMagic = UInt8[0x93, 'N', 'U', 'M', 'P', 'Y']
@@ -22,13 +24,21 @@ const TypeMaps = [
 	("u2", UInt16),
 	("u4", UInt32),
 	("u8", UInt64),
+	("f2", Float16),
 	("f4", Float32),
 	("f8", Float64),
 	("c8", Complex64),
 	("c16", Complex128),
 ]
-Numpy2Julia = [s => t for (s, t) in TypeMaps]
-Julia2Numpy = [t => s for (s, t) in TypeMaps]
+Numpy2Julia = Dict{String, DataType}()
+for (s,t) in TypeMaps
+    Numpy2Julia[s] = t
+end
+
+Julia2Numpy = Dict{DataType, String}()
+for (s,t) in TypeMaps
+    Julia2Numpy[t] = s
+end
 
 # Julia2Numpy is a dictionary that uses Types as keys.
 # This is problematic for precompilation because the
@@ -38,7 +48,7 @@ Julia2Numpy = [t => s for (s, t) in TypeMaps]
 # be fixed by rehashing the Dict when the module is
 # loaded.
 
-if VERSION >= v"0.4.0" 
+if VERSION >= v"0.4.0"
 	__init__() = Base.rehash!(Julia2Numpy)
 end
 
@@ -52,17 +62,17 @@ function writele(ios::IO, x::Vector{UInt8})
 	n
 end
 
-writele(ios::IO, x::ASCIIString) = writele(ios, convert(Vector{UInt8}, x))
+writele(ios::IO, x::String) = writele(ios, convert(Vector{UInt8}, x))
 writele(ios::IO, x::UInt16) = writele(ios, reinterpret(UInt8, [htol(x)]))
 
-function parsechar(s::ASCIIString, c::Char)
+function parsechar(s::String, c::Char)
 	if s[1] != c
 		error("parsing header failed: expected character '$c', found '$(s[1])'")
 	end
 	s[2:end]
 end
 
-function parsestring(s::ASCIIString)
+function parsestring(s::String)
 	s = parsechar(s, '\'')
 	i = findfirst(s, '\'')
 	if i == 0
@@ -71,7 +81,7 @@ function parsestring(s::ASCIIString)
 	s[1:i-1], s[i+1:end]
 end
 
-function parsebool(s::ASCIIString)
+function parsebool(s::String)
 	if s[1:4] == "True"
 		return true, s[5:end]
 	elseif s[1:5] == "False"
@@ -80,7 +90,7 @@ function parsebool(s::ASCIIString)
 	error("parsing header failed: excepted True or False")
 end
 
-function parseinteger(s::ASCIIString)
+function parseinteger(s::String)
 	i = findfirst(c -> !isdigit(c), s)
 	n = parse(Int, s[1:i-1])
 	if s[i] == 'L'
@@ -89,7 +99,7 @@ function parseinteger(s::ASCIIString)
 	n, s[i:end]
 end
 
-function parsetuple(s::ASCIIString)
+function parsetuple(s::String)
 	s = parsechar(s, '(')
 	tup = Int[]
 	while true
@@ -109,7 +119,7 @@ function parsetuple(s::ASCIIString)
 	tup, s
 end
 
-function parsedtype(s::ASCIIString)
+function parsedtype(s::String)
 	dtype, s = parsestring(s)
 	c, t = dtype[1], dtype[2:end]
 	if c == '<'
@@ -133,10 +143,10 @@ type Header
 	shape :: Vector{Int}
 end
 
-function parseheader(s::ASCIIString)
+function parseheader(s::String)
 	s = parsechar(s, '{')
-	
-	dict = @compat Dict{ASCIIString,Any}()
+
+	dict = @compat Dict{String,Any}()
 	for _ in 1:3
 		s = strip(s)
 		key, s = parsestring(s)
@@ -177,9 +187,9 @@ function npzreadarray(f::IO)
 		error("unsupported NPZ version")
 	end
 	hdrlen = readle(f, UInt16)
-	hdr = ascii(read(f, UInt8, hdrlen))
+	hdr = ascii(String(read(f, UInt8, hdrlen)))
 	hdr = parseheader(strip(hdr))
-	
+
 	toh, typ = hdr.descr
 	if hdr.fortran_order
 		x = map(toh, read(f, typ, hdr.shape...))
@@ -213,7 +223,7 @@ function npzread(filename::AbstractString)
 end
 
 function npzread(dir::ZipFile.Reader)
-	vars = Dict{UTF8String,Any}()
+	vars = Dict{String,Any}()
 	for f in dir.files
 		name = f.name
 		if endswith(name, ".npy")
@@ -230,10 +240,10 @@ function npzwritearray(f::IO, x::Array{UInt8}, T::DataType, shape::Vector{Int})
 	end
 	writele(f, NPYMagic)
 	writele(f, Version)
-	
+
 	descr =  (ENDIAN_BOM == 0x01020304 ? ">" : "<") * Julia2Numpy[T]
 	dict = "{'descr': '$descr', 'fortran_order': True, 'shape': $(tuple(shape...)), }"
-	
+
 	# The dictionary is padded with enough whitespace so that
 	# the array data is 16-byte aligned
 	n = length(NPYMagic)+length(Version)+2+length(dict)
@@ -241,7 +251,7 @@ function npzwritearray(f::IO, x::Array{UInt8}, T::DataType, shape::Vector{Int})
 	if pad > 0
 		dict *= " "^(pad-1) * "\n"
 	end
-	
+
 	writele(f, @compat UInt16(length(dict)))
 	writele(f, dict)
 	if write(f, x) != length(x)
