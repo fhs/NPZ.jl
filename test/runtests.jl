@@ -1,5 +1,6 @@
 using Base.Test
 using NPZ, Compat
+import Compat: UTF8String, ASCIIString
 
 Debug = false
 
