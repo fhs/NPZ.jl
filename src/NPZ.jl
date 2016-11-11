@@ -5,6 +5,7 @@ module NPZ
 
 using ZipFile
 using Compat
+import Compat: UTF8String, ASCIIString
 
 export npzread, npzwrite
 
@@ -27,8 +28,8 @@ const TypeMaps = [
 	("c8", Complex64),
 	("c16", Complex128),
 ]
-Numpy2Julia = [s => t for (s, t) in TypeMaps]
-Julia2Numpy = [t => s for (s, t) in TypeMaps]
+Numpy2Julia = Dict(s => t for (s, t) in TypeMaps)
+Julia2Numpy = Dict(t => s for (s, t) in TypeMaps)
 
 # Julia2Numpy is a dictionary that uses Types as keys.
 # This is problematic for precompilation because the
@@ -177,7 +178,7 @@ function npzreadarray(f::IO)
 		error("unsupported NPZ version")
 	end
 	hdrlen = readle(f, UInt16)
-	hdr = ascii(read(f, UInt8, hdrlen))
+	hdr = ascii(UTF8String(read(f, UInt8, hdrlen)))
 	hdr = parseheader(strip(hdr))
 	
 	toh, typ = hdr.descr
