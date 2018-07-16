@@ -1,3 +1,4 @@
+__precompile__()
 module NPZ
 
 # NPZ file format is described in
@@ -30,14 +31,23 @@ const TypeMaps = [
 	("c8", Complex64),
 	("c16", Complex128),
 ]
-Numpy2Julia = Dict{String, DataType}()
+const Numpy2Julia = Dict{String, DataType}()
 for (s,t) in TypeMaps
     Numpy2Julia[s] = t
 end
 
-Julia2Numpy = Dict{DataType, String}()
-for (s,t) in TypeMaps
-    Julia2Numpy[t] = s
+const Julia2Numpy = Dict{DataType, String}()
+
+@static if VERSION >= v"0.4.0"
+    function __init__()
+        for (s,t) in TypeMaps
+            Julia2Numpy[t] = s
+        end
+    end
+else
+    for (s,t) in TypeMaps
+        Julia2Numpy[t] = s
+    end
 end
 
 # Julia2Numpy is a dictionary that uses Types as keys.
@@ -47,10 +57,6 @@ end
 # not be the same as when it is later run. This can
 # be fixed by rehashing the Dict when the module is
 # loaded.
-
-if VERSION >= v"0.4.0"
-	__init__() = Base.rehash!(Julia2Numpy)
-end
 
 readle(ios::IO, ::Type{UInt16}) = htol(read(ios, UInt16))
 
