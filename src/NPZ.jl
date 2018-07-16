@@ -31,12 +31,12 @@ const TypeMaps = [
 	("c8", Complex64),
 	("c16", Complex128),
 ]
-Numpy2Julia = Dict{String, DataType}()
+const Numpy2Julia = Dict{String, DataType}()
 for (s,t) in TypeMaps
     Numpy2Julia[s] = t
 end
 
-Julia2Numpy = Dict{DataType, String}()
+const Julia2Numpy = Dict{DataType, String}()
 
 @static if VERSION >= v"0.4.0"
     function __init__()
