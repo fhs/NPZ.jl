@@ -66,7 +66,7 @@ end
 # be fixed by rehashing the Dict when the module is
 # loaded.
 
-readle(ios::IO, ::Type{T}) where T = ltoh(read(ios, T)) #ltoh is inverse of htol
+readle(ios::IO, ::Type{T}) where T = ltoh(read(ios, T)) # ltoh is inverse of htol
 
 function writecheck(io::IO, x::Any)
     n = write(io, x) # returns size in bytes
