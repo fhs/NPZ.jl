@@ -82,37 +82,42 @@ writele(ios::IO, x::AbstractString) = writele(ios, codeunits(x))
 writele(ios::IO, x::UInt16) = writecheck(ios, htol(x))
 
 function parsechar(s::AbstractString, c::Char)
-    if s[1] != c
-        error("parsing header failed: expected character '$c', found '$(s[1])'")
+    firstchar = s[firstindex(s)]
+    if  firstchar != c
+        error("parsing header failed: expected character '$c', found '$firstchar'")
     end
-    s[2:end]
+    SubString(s, nextind(s, 1))
 end
 
 function parsestring(s::AbstractString)
     s = parsechar(s, '\'')
-    i = something(findfirst(isequal('\''), s), 0)
-    if i == 0
-        error("parsing header failed: malformed string")
-    end
-    s[1:i-1], s[i+1:end]
+    parts = split(s, '\'', limit = 2)
+    length(parts) != 2 && error("parsing header failed: malformed string")
+    parts[1], parts[2]
 end
 
 function parsebool(s::AbstractString)
-    if s[1:4] == "True"
-        return true, s[5:end]
-    elseif s[1:5] == "False"
-        return false, s[6:end]
+    if SubString(s, firstindex(s), thisind(s, 4)) == "True"
+        return true, SubString(s, nextind(s, 4))
+    elseif SubString(s, firstindex(s), thisind(s, 5)) == "False"
+        return false, SubString(s, nextind(s, 5))
     end
     error("parsing header failed: excepted True or False")
 end
 
 function parseinteger(s::AbstractString)
-    i = something(findfirst(c -> !isdigit(c), s), 0)
-    n = parse(Int, s[1:i-1])
-    if s[i] == 'L'
-        i += 1
+    isdigit(s[firstindex(s)]) || error("parsing header failed: no digits")
+    tail_idx = findfirst(c -> !isdigit(c), s)
+    if tail_idx == nothing
+        intstr = SubString(s, firstindex(s))
+    else
+        intstr = SubString(s, firstindex(s), prevind(s, tail_idx))
+        if s[tail_idx] == 'L' # output of firstindex should be a valid code point
+            tail_idx = nextind(s, i)
+        end
     end
-    n, s[i:end]
+    n = parse(Int, intstr)
+    return n, SubString(s, tail_idx)
 end
 
 function parsetuple(s::AbstractString)
@@ -120,13 +125,13 @@ function parsetuple(s::AbstractString)
     tup = Int[]
     while true
         s = strip(s)
-        if s[1] == ')'
+        if s[firstindex(s)] == ')'
             break
         end
         n, s = parseinteger(s)
-        tup = [tup; n]
+        push!(tup, n)
         s = strip(s)
-        if s[1] == ')'
+        if s[firstindex(s)] == ')'
             break
         end
         s = parsechar(s, ',')
@@ -137,7 +142,8 @@ end
 
 function parsedtype(s::AbstractString)
     dtype, s = parsestring(s)
-    c, t = dtype[1], dtype[2:end]
+    c = dtype[firstindex(s)]
+    t = SubString(dtype, nextind(s, 1))
     if c == '<'
         toh = ltoh
     elseif c == '>'
@@ -179,7 +185,7 @@ function parseheader(s::AbstractString)
             error("parsing header failed: bad dictionary key")
         end
         s = strip(s)
-        if s[1] == '}'
+        if s[firstindex(s)] == '}'
             break
         end
         s = parsechar(s, ',')
