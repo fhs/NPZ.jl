@@ -6,6 +6,15 @@ module NPZ
 
 using ZipFile, Compat
 
+@static if VERSION >=  v"0.7.0-DEV.2575"
+    import Base.CodeUnits
+else
+    # CodeUnits not yet supported by Compat but not needed in julia 0.6...
+    # codeunits function in Compat returns uintX instead of codeunits
+    # therefore this 'stump' type should work
+    abstract type CodeUnits{U, S} end
+end
+
 export npzread, npzwrite
 
 const NPYMagic = UInt8[0x93, 'N', 'U', 'M', 'P', 'Y']
@@ -66,8 +75,9 @@ end
 
 # Endianness only pertains to multi-byte things
 writele(ios::IO, x::AbstractVector{UInt8}) = writecheck(ios, x)
-# NPY headers only have ascii strings (bytes) so endianness doesn't matter
-writele(ios::IO, x::AbstractString) = writecheck(ios, codeunits(x))
+writele(ios::IO, x::AbstractVector{CodeUnits{UInt8, <:Any}}) = writecheck(ios, x)
+# codeunits returns vector of CodeUnits in 7+, uint in 6
+writele(ios::IO, x::AbstractString) = writele(ios, codeunits(x))
 
 writele(ios::IO, x::UInt16) = writecheck(ios, htol(x))
 
