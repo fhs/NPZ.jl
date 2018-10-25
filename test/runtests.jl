@@ -73,6 +73,10 @@ for x in TestArrays
     end
 end
 
+# Test Dicts
+dict_with_array = Dict("a"=>rand(3,3))
+npzwrite("$tmp/test.npz",dict_with_array)
+
 
 if !Debug
     run(`rm -rf $tmp`)
