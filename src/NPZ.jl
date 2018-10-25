@@ -296,15 +296,14 @@ end
 function npzwritearray(f::IO, x::T) where T<:Number
     npzwritearray(f, reinterpret(UInt8, [x]), T, Int[])
 end
+
 function npzwrite(filename::AbstractString, x)
     f = open(filename, "w")
     npzwritearray(f, x)
     close(f)
 end
 
-function npzwrite(
-    filename::AbstractString, vars::Dict{S,Any}
-) where S<:AbstractString
+function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString}) 
     dir = ZipFile.Writer(filename)
     for (k, v) in vars
         f = ZipFile.addfile(dir, k * ".npy")
