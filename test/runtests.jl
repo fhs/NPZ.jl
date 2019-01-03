@@ -56,7 +56,7 @@ for (i, x) in enumerate(TestArrays)
 end
 filename = "$tmp/big.npz"
 npzwrite(filename, old)
-@time read_out = npzread(filename)
+read_out = npzread(filename)
 for (k, v) in old
     @test v == read_out[k]
 end
