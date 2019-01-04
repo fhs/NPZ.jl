@@ -61,7 +61,13 @@ for (k, v) in old
 end
 @test old == new
 
-
+testdict = Dict("one"=>21, "two"=>34)
+dictfilename = "$tmp/dict.npz"
+npzwrite(dictfilename, testdict)
+dictoutput = npzread(dictfilename)
+for (k, v) in testdict
+    @test v == dictoutput[k]
+end
 # Write and then read NPY files for each array
 for x in TestArrays
     let filename = "$tmp/test.npy"
