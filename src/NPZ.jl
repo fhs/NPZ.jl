@@ -301,9 +301,7 @@ function npzwrite(filename::AbstractString, x)
     close(f)
 end
 
-function npzwrite(
-    filename::AbstractString, vars::Dict{S,Any}
-) where S<:AbstractString
+function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString}) 
     dir = ZipFile.Writer(filename)
     for (k, v) in vars
         f = ZipFile.addfile(dir, k * ".npy")
