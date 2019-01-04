@@ -45,7 +45,7 @@ TestArrays = Any[
     Complex{Float64}[1+2im, 3, 4+5im, 6im, 7+8im],
     [i-j for i in 1:3, j in 1:5],
     [i-j+k for i in 1:3, j in 1:4, k in 1:5],
-    rand(512,512,16)
+    rand(512, 512, 16)
 ]
 
 # Write a NPZ file with all the test arrays and numbers,
@@ -56,11 +56,11 @@ for (i, x) in enumerate(TestArrays)
 end
 filename = "$tmp/big.npz"
 npzwrite(filename, old)
-read_out = npzread(filename)
+output = npzread(filename)
 for (k, v) in old
-    @test v == read_out[k]
+    @test v == output[k]
 end
-@test old == read_out
+@test old == output
 
 
 # Write and then read NPY files for each array
