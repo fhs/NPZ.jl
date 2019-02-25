@@ -205,10 +205,19 @@ function npzreadarray(f::IO)
         error("not a numpy array file")
     end
     @compat b = read!(f, Vector{UInt8}(undef, length(Version)))
-    if b != Version
+    if b[2] != Version[2]
         error("unsupported NPZ version")
     end
-    hdrlen = readle(f, UInt16)
+
+    # support for version 2 files
+    if b[1] == 1
+        hdrlen = readle(f, UInt16)
+    elseif b[1] == 2 
+        hdrlen = readle(f, UInt32)
+    else
+        error("unsupported NPZ version")
+    end
+
     @compat hdr = ascii(String(read!(f, Vector{UInt8}(undef, hdrlen))))
     hdr = parseheader(strip(hdr))
 
