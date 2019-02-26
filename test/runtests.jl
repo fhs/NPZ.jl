@@ -80,6 +80,12 @@ for x in TestArrays
     end
 end
 
+#v2 tests
+v2_solution = Array{Float64,1}([0.1*i for i in 0:10])
+v2_read = npzread("linspace.npy")
+@test(typeof(v2_read) == typeof(v2_solution))
+@test(size(  v2_read) == size(v2_solution))
+@test(       v2_read  == v2_solution)
 
 if !Debug
     run(`rm -rf $tmp`)
