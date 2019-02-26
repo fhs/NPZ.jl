@@ -205,9 +205,6 @@ function npzreadarray(f::IO)
         error("not a numpy array file")
     end
     @compat b = read!(f, Vector{UInt8}(undef, length(Version)))
-    if b[2] != Version[2]
-        error("unsupported NPZ version")
-    end
 
     # support for version 2 files
     if b[1] == 1
