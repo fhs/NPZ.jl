@@ -90,3 +90,7 @@ v2_read = npzread("linspace.npy")
 if !Debug
     run(`rm -rf $tmp`)
 end
+
+
+@test NPZ.parseinteger("123Hello") == (123, "Hello")
+@test NPZ.parseinteger("123LHello") == (123, "Hello")

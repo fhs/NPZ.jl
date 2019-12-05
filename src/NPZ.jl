@@ -113,7 +113,7 @@ function parseinteger(s::AbstractString)
     else
         intstr = SubString(s, firstindex(s), prevind(s, tail_idx))
         if s[tail_idx] == 'L' # output of firstindex should be a valid code point
-            tail_idx = nextind(s, i)
+            tail_idx = nextind(s, tail_idx)
         end
     end
     n = parse(Int, intstr)
