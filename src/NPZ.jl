@@ -235,36 +235,64 @@ function samestart(a::AbstractVector, b::AbstractVector)
     length(a) >= nb && view(a, 1:nb) == b
 end
 
-function npzread(filename::AbstractString)
+function _maybetrimext(name::AbstractString)
+    fname, ext = splitext(name)
+    if ext == ".npy"
+        name = fname
+    end
+    name
+end
+
+"""
+    npzread(filename::AbstractString, [vars])
+
+Read an variable or a collection of variables from `filename`. 
+The input needs to be either an `npy` or an `npz` file.
+The optional argument `vars` is used only for `npz` files.
+If it is specified, only the matching variables are read in from the file.
+
+# Example
+
+```julia
+julia> npzwrite("temp.npz", Dict("x" => ones(3), "y" => 3))
+
+julia> npzread("temp.npz") # Reads all variables
+Dict{String,Any} with 2 entries:
+  "x" => [1.0, 1.0, 1.0]
+  "y" => 3
+
+julia> npzread("temp.npz", ["x"]) # Reads only "x"
+Dict{String,Array{Float64,1}} with 1 entry:
+  "x" => [1.0, 1.0, 1.0]
+```
+"""
+function npzread(filename::AbstractString, vars...)
     # Detect if the file is a numpy npy array file or a npz/zip file.
     f = open(filename)
     @compat b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
+
     if samestart(b, ZIPMagic)
-        close(f)
-        f = ZipFile.Reader(filename)
-        data = npzread(f)
-        close(f)
-        return data
-    end
-    if samestart(b, NPYMagic)
+        fz = ZipFile.Reader(filename)
+        data = npzread(fz, vars...)
+        close(fz)
+    elseif samestart(b, NPYMagic)
         seekstart(f)
         data = npzreadarray(f)
+    else
         close(f)
-        return data
+        error("not a NPY or NPZ/Zip file: $filename")
     end
-    error("not a NPY or NPZ/Zip file: $filename")
+
+    close(f)
+    return data
 end
 
-function npzread(dir::ZipFile.Reader)
-    vars = Dict{String,Any}()
-    for f in dir.files
-        name = f.name
-        if endswith(name, ".npy")
-            name = name[1:end-4]
-        end
-        vars[name] = npzreadarray(f)
-    end
-    vars
+function npzread(dir::ZipFile.Reader, 
+    vars = map(f -> _maybetrimext(f.name), dir.files))
+
+    Dict(_maybetrimext(f.name) => npzreadarray(f)
+        for f in dir.files 
+            if f.name in vars || _maybetrimext(f.name) in vars)
 end
 
 function npzwritearray(
@@ -301,12 +329,51 @@ end
 function npzwritearray(f::IO, x::T) where T<:Number
     npzwritearray(f, reinterpret(UInt8, [x]), T, Int[])
 end
+
+"""
+    npzwrite(filename::AbstractString, x)
+
+Write the variable `x` to the `npy` file `filename`. 
+Unlike `numpy`, the extension `.npy` is not appened to `filename`.
+
+!!! warn "Warning"
+    Any existing file with the same name will be overwritten.
+
+# Examples
+```julia
+julia> npzwrite("abc.npy", zeros(3))
+
+julia> npzread("abc.npy")
+3-element Array{Float64,1}:
+ 0.0
+ 0.0
+ 0.0
+```
+"""
 function npzwrite(filename::AbstractString, x)
-    f = open(filename, "w")
-    npzwritearray(f, x)
-    close(f)
+    open(filename, "w") do f
+        npzwritearray(f, x)
+    end
 end
 
+"""
+    npzwrite(filename::AbstractString, vars::Dict{<:AbstractString})
+
+Write the variables in `vars` to an `npz` file named `filename`.
+Unlike `numpy`, the extension `.npz` is not appened to `filename`.
+
+!!! warn "Warning"
+    Any existing file with the same name will be overwritten.
+
+```julia
+julia> npzwrite("temp.npz", Dict("x" => ones(3), "y" => 3))
+
+julia> npzread("temp.npz")
+Dict{String,Any} with 2 entries:
+  "x" => [1.0, 1.0, 1.0]
+  "y" => 3
+```
+"""
 function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString}) 
     dir = ZipFile.Writer(filename)
     for (k, v) in vars

@@ -68,6 +68,11 @@ npzwrite(dictfilename, testdict)
 dictoutput = npzread(dictfilename)
 for (k, v) in testdict
     @test v == dictoutput[k]
+    d = npzread(dictfilename, [k])
+    @test typeof(d) == Dict{String,typeof(v)}
+    val_read = d[k]
+    @test typeof(val_read) == typeof(v)
+    @test val_read == v
 end
 # Write and then read NPY files for each array
 for x in TestArrays
