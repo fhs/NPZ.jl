@@ -246,7 +246,7 @@ end
 """
     npzread(filename::AbstractString, [vars])
 
-Read an variable or a collection of variables from `filename`. 
+Read a variable or a collection of variables from `filename`. 
 The input needs to be either an `npy` or an `npz` file.
 The optional argument `vars` is used only for `npz` files.
 If it is specified, only the matching variables are read in from the file.

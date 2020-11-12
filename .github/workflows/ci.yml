@@ -17,10 +17,10 @@ jobs:
         version:
           - '0.7'
           - '1.0'
+          - '1.1'
           - '1'
           - 'nightly'
-        os:
-          - ubuntu-latest
+        os: [ubuntu-latest, macOS-latest]
         arch:
           - x64
     steps:
