@@ -10,7 +10,7 @@ ZIP file.  For more information, see the `numpy.save`, `numpy.savez`,
 `numpy.savez_compressed`, and `numpy.load` functions in the [Numpy
 documentation](http://docs.scipy.org/doc/numpy/reference/routines.io.html#npz-files).
 
-![CI](https://github.com/fhs/NPZ.jl/workflows/CI/badge.svg)
+[![CI](https://github.com/fhs/NPZ.jl/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/fhs/NPZ.jl/actions?query=workflow%3ACI)
 
 ## Installation
 
