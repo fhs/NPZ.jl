@@ -11,6 +11,7 @@ ZIP file.  For more information, see the `numpy.save`, `numpy.savez`,
 documentation](http://docs.scipy.org/doc/numpy/reference/routines.io.html#npz-files).
 
 [![CI](https://github.com/fhs/NPZ.jl/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/fhs/NPZ.jl/actions?query=workflow%3ACI+branch%3Amaster+event%3Apush)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://fhs.github.io/NPZ.jl/dev)
 
 ## Installation
 
