@@ -45,8 +45,8 @@ Write and then read back a collection of arrays or numbers:
 julia> npzwrite("data.npz", Dict("x" => x, "a" => collect(1:9), "n" => 42))
 
 julia> vars = npzread("data.npz")
-["x"=>3x4 Int64 Array:
- 0  -1  -2  -3
- 1   0  -1  -2
- 2   1   0  -1,"n"=>42,"a"=>[1,2,3,4,5,6,7,8,9]]
+Dict{String,Any} with 3 entries:
+  "x" => [0 -1 -2 -3; 1 0 -1 -2; 2 1 0 -1]
+  "a" => [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  "n" => 42
 ```
