@@ -99,3 +99,13 @@ end
 
 @test NPZ.parseinteger("123Hello") == (123, "Hello")
 @test NPZ.parseinteger("123LHello") == (123, "Hello")
+
+@testset "npzwrite kwargs" begin
+    f = tempname()
+    npzwrite(f, ones(2,2), x = ones(3), y = 3)
+    d = npzread(f)
+    @test d["arr_0"] == ones(2,2)
+    @test d["x"] == ones(3)
+    @test d["y"] == 3
+    rm(f)
+end
