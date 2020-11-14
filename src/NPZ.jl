@@ -251,10 +251,10 @@ The input needs to be either an `npy` or an `npz` file.
 The optional argument `vars` is used only for `npz` files.
 If it is specified, only the matching variables are read in from the file.
 
-# Example
+# Examples
 
 ```julia
-julia> npzwrite("temp.npz", Dict("x" => ones(3), "y" => 3))
+julia> npzwrite("temp.npz", x = ones(3), y = 3)
 
 julia> npzread("temp.npz") # Reads all variables
 Dict{String,Any} with 2 entries:
@@ -340,6 +340,7 @@ Unlike `numpy`, the extension `.npy` is not appened to `filename`.
     Any existing file with the same name will be overwritten.
 
 # Examples
+
 ```julia
 julia> npzwrite("abc.npy", zeros(3))
 
@@ -358,12 +359,20 @@ end
 
 """
     npzwrite(filename::AbstractString, vars::Dict{<:AbstractString})
+    npzwrite(filename::AbstractString, args...; kwargs...)
 
-Write the variables in `vars` to an `npz` file named `filename`.
+In the first form, write the variables in `vars` to an `npz` file named `filename`.
+
+In the second form, the variables in `args` and `kwargs` are collectively written out 
+to `filename`. The variables in `args` are saved with names `arr_0`, `arr_1` 
+and so on, whereas the ones in `kwargs` are saved with the specified names.
+
 Unlike `numpy`, the extension `.npz` is not appened to `filename`.
 
 !!! warn "Warning"
     Any existing file with the same name will be overwritten.
+
+# Examples
 
 ```julia
 julia> npzwrite("temp.npz", Dict("x" => ones(3), "y" => 3))
@@ -372,6 +381,14 @@ julia> npzread("temp.npz")
 Dict{String,Any} with 2 entries:
   "x" => [1.0, 1.0, 1.0]
   "y" => 3
+
+julia> npzwrite("temp.npz", ones(2,2), x = ones(3), y = 3)
+
+julia> npzread("temp.npz")
+Dict{String,Any} with 3 entries:
+  "arr_0" => [1.0 1.0; 1.0 1.0]
+  "x"     => [1.0, 1.0, 1.0]
+  "y"     => 3
 ```
 """
 function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString}) 
@@ -382,6 +399,15 @@ function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString})
         close(f)
     end
     close(dir)
+end
+
+function npzwrite(filename::AbstractString, args...; kwargs...)
+    d = Dict{String,Any}(string(k) => v for (k,v) in kwargs)
+    for (ind, arg) in enumerate(args)
+        arrname = "arr_" * string(ind - 1)
+        d[arrname] = arg
+    end
+    npzwrite(filename, d)
 end
 
 end # module
