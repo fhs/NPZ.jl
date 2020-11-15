@@ -363,7 +363,7 @@ end
 
 In the first form, write the variables in `vars` to an `npz` file named `filename`.
 
-In the second form, the variables in `args` and `kwargs` are collectively written out 
+In the second form, collect the variables in `args` and `kwargs` and write them all
 to `filename`. The variables in `args` are saved with names `arr_0`, `arr_1` 
 and so on, whereas the ones in `kwargs` are saved with the specified names.
 
@@ -402,11 +402,11 @@ function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString})
 end
 
 function npzwrite(filename::AbstractString, args...; kwargs...)
-    d = Dict{String,Any}(string(k) => v for (k,v) in kwargs)
-    for (ind, arg) in enumerate(args)
-        arrname = "arr_" * string(ind - 1)
-        d[arrname] = arg
-    end
+    dkwargs = Dict(string(k) => v for (k,v) in kwargs)
+    dargs = Dict("arr_"*string(i-1) => v for (i,v) in enumerate(args))
+    
+    d = merge(dargs, dkwargs)
+    
     npzwrite(filename, d)
 end
 
