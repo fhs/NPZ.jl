@@ -398,24 +398,26 @@ Dict{String,Any} with 3 entries:
 """
 function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString}) 
     dir = ZipFile.Writer(filename)
+
+    if length(vars) == 0
+        @warn "no data to be written to $filename. It might not be possible to read the file correctly."
+    end
+
     for (k, v) in vars
         f = ZipFile.addfile(dir, k * ".npy")
         npzwritearray(f, v)
         close(f)
     end
+
     close(dir)
 end
 
 function npzwrite(filename::AbstractString, args...; kwargs...)
-    dkwargs = Dict{String,Any}(string(k) => v for (k,v) in kwargs)
-    dargs = Dict{String,Any}("arr_"*string(i-1) => v for (i,v) in enumerate(args))
+    dkwargs = Dict(string(k) => v for (k,v) in kwargs)
+    dargs = Dict("arr_"*string(i-1) => v for (i,v) in enumerate(args))
 
-    d = merge(dargs, dkwargs)
+    d = convert(Dict{String,Any}, merge(dargs, dkwargs))
 
-    if length(d) == 0
-        @warn "no data to be written to $filename. It might not be possible to read the file correctly."
-    end
-    
     npzwrite(filename, d)
 end
 
