@@ -107,5 +107,14 @@ end
     @test d["arr_0"] == ones(2,2)
     @test d["x"] == ones(3)
     @test d["y"] == 3
+
+    npzwrite(f, x = 4)
+    @test npzread(f, ["x"])["x"] == 4
     rm(f)
+end
+
+@testset "zero-dim array" begin
+    f = tempname()
+    npzwrite(f, zeros())
+    @test npzread(f) == 0.0
 end
