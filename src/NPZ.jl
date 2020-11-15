@@ -251,6 +251,11 @@ The input needs to be either an `npy` or an `npz` file.
 The optional argument `vars` is used only for `npz` files.
 If it is specified, only the matching variables are read in from the file.
 
+!!! note "Zero-dimensional arrays"
+    Zero-dimensional arrays are stripped while being read in, and the values that they
+    contain are returned. This is a notable difference from numpy, where 
+    numerical values are written out and read back in as zero-dimensional arrays.
+
 # Examples
 
 ```julia
@@ -296,8 +301,8 @@ function npzread(dir::ZipFile.Reader,
 end
 
 function npzwritearray(
-    f::IO, x::AbstractArray{UInt8}, T::DataType, shape::Vector{Int}
-)
+    f::IO, x::AbstractArray{UInt8}, T::DataType, shape)
+
     if !haskey(Julia2Numpy, T)
         error("unsupported type $T")
     end
@@ -305,7 +310,7 @@ function npzwritearray(
     writele(f, Version)
 
     descr =  (ENDIAN_BOM == 0x01020304 ? ">" : "<") * Julia2Numpy[T]
-    dict = "{'descr': '$descr', 'fortran_order': True, 'shape': $(tuple(shape...)), }"
+    dict = "{'descr': '$descr', 'fortran_order': True, 'shape': $(Tuple(shape)), }"
 
     # The dictionary is padded with enough whitespace so that
     # the array data is 16-byte aligned
@@ -322,12 +327,12 @@ function npzwritearray(
     end
 end
 
-function npzwritearray(f::IO, x::AbstractArray{T}) where T
-    npzwritearray(f, reinterpret(UInt8, x[:]), T, [i for i in size(x)])
+function npzwritearray(f::IO, x::AbstractArray)
+    npzwritearray(f, reinterpret(UInt8, vec(x)), eltype(x), size(x))
 end
 
-function npzwritearray(f::IO, x::T) where T<:Number
-    npzwritearray(f, reinterpret(UInt8, [x]), T, Int[])
+function npzwritearray(f::IO, x::Number)
+    npzwritearray(f, reinterpret(UInt8, [x]), typeof(x), ())
 end
 
 """
@@ -402,10 +407,14 @@ function npzwrite(filename::AbstractString, vars::Dict{<:AbstractString})
 end
 
 function npzwrite(filename::AbstractString, args...; kwargs...)
-    dkwargs = Dict(string(k) => v for (k,v) in kwargs)
-    dargs = Dict("arr_"*string(i-1) => v for (i,v) in enumerate(args))
-    
+    dkwargs = Dict{String,Any}(string(k) => v for (k,v) in kwargs)
+    dargs = Dict{String,Any}("arr_"*string(i-1) => v for (i,v) in enumerate(args))
+
     d = merge(dargs, dkwargs)
+
+    if length(d) == 0
+        @warn "no data to be written to $filename. It might not be possible to read the file correctly."
+    end
     
     npzwrite(filename, d)
 end
