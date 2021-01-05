@@ -203,7 +203,7 @@ function parseheader(s::AbstractString)
     Header{T}(dict["descr"], dict["fortran_order"], dict["shape"])
 end
 
-function npzreadheader(f::IO)
+function readheader(f::IO)
     @compat b = read!(f, Vector{UInt8}(undef, length(NPYMagic)))
     if b != NPYMagic
         error("not a numpy array file")
@@ -237,7 +237,7 @@ function _npzreadarray(f, hdr::Header{T}) where {T}
 end
 
 function npzreadarray(f::IO)
-    hdr = npzreadheader(f)
+    hdr = readheader(f)
     _npzreadarray(f, hdr)
 end
 
@@ -310,18 +310,18 @@ function npzread(dir::ZipFile.Reader,
             if f.name in vars || _maybetrimext(f.name) in vars)
 end
 
-function npzreadheader(filename::AbstractString, vars...)
+function readheader(filename::AbstractString, vars...)
     # Detect if the file is a numpy npy array file or a npz/zip file.
     f = open(filename)
     @compat b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
 
     if samestart(b, ZIPMagic)
         fz = ZipFile.Reader(filename)
-        data = npzreadheader(fz, vars...)
+        data = readheader(fz, vars...)
         close(fz)
     elseif samestart(b, NPYMagic)
         seekstart(f)
-        data = npzreadheader(f)
+        data = readheader(f)
     else
         close(f)
         error("not a NPY or NPZ/Zip file: $filename")
@@ -330,10 +330,10 @@ function npzreadheader(filename::AbstractString, vars...)
     close(f)
     return data
 end
-function npzreadheader(dir::ZipFile.Reader, 
+function readheader(dir::ZipFile.Reader, 
     vars = map(f -> _maybetrimext(f.name), dir.files))
 
-    Dict(_maybetrimext(f.name) => npzreadheader(f)
+    Dict(_maybetrimext(f.name) => readheader(f)
         for f in dir.files 
             if f.name in vars || _maybetrimext(f.name) in vars)
 end
