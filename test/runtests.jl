@@ -1,5 +1,7 @@
 using NPZ, Compat
 
+import NPZ: npzreadheader
+
 @static if VERSION >= v"0.7.0-DEV.2575"
     using Test
 else
@@ -117,4 +119,20 @@ end
     f = tempname()
     npzwrite(f, zeros())
     @test npzread(f) == 0.0
+end
+
+@testset "npzreadheader" begin
+    checksize(a, b) = all(a .== b)
+
+    f = tempname()
+    arr = zeros(2,3)
+    npzwrite(f, arr)
+    hdr = npzreadheader(f)
+    @test checksize(hdr.shape, size(arr))
+
+    npzwrite(f, ones(2,2), x = ones(3), y = 3)
+    hdr = npzreadheader(f)
+    @test checksize(hdr["arr_0"].shape, (2,2))
+    @test checksize(hdr["x"].shape, (3,))
+    @test checksize(hdr["y"].shape, ())
 end
