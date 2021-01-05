@@ -313,6 +313,13 @@ function npzread(dir::ZipFile.Reader,
             if f.name in vars || _maybetrimext(f.name) in vars)
 end
 
+"""
+    readheader(filename, [vars...])
+
+Return a header or a collection of headers corresponding to each variable contained in `filename`. 
+The header contains information about the `eltype` and `size` of the array that may be extracted using 
+the corresponding accessor functions.
+"""
 function readheader(filename::AbstractString, vars...)
     # Detect if the file is a numpy npy array file or a npz/zip file.
     f = open(filename)
