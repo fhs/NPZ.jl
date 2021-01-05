@@ -166,6 +166,9 @@ struct Header{T,N,F<:Function}
 end
 
 Header{T}(descr::F, fortran_order, shape::NTuple{N,Int}) where {T,N,F} = Header{T,N,F}(descr, fortran_order, shape)
+Base.size(hdr::Header) = hdr.shape
+Base.eltype(hdr::Header{T}) where T = T
+Base.ndims(hdr::Header{T,N}) where {T,N} = N
 
 function parseheader(s::AbstractString)
     s = parsechar(s, '{')
