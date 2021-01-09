@@ -137,7 +137,7 @@ function parsetuple(s::AbstractString)
         s = parsechar(s, ',')
     end
     s = parsechar(s, ')')
-    tup, s
+    Tuple(tup), s
 end
 
 function parsedtype(s::AbstractString)
@@ -159,16 +159,22 @@ function parsedtype(s::AbstractString)
     (toh, Numpy2Julia[t]), s
 end
 
-struct Header
-    descr::Tuple{Function, DataType}
+struct Header{T,N,F<:Function}
+    descr::F
     fortran_order::Bool
-    shape::Vector{Int}
+    shape::NTuple{N,Int}
 end
+
+Header{T}(descr::F, fortran_order, shape::NTuple{N,Int}) where {T,N,F} = Header{T,N,F}(descr, fortran_order, shape)
+Base.size(hdr::Header) = hdr.shape
+Base.eltype(hdr::Header{T}) where T = T
+Base.ndims(hdr::Header{T,N}) where {T,N} = N
 
 function parseheader(s::AbstractString)
     s = parsechar(s, '{')
 
     dict = Dict{String,Any}()
+    T = Any
     for _ in 1:3
         s = strip(s)
         key, s = parsestring(s)
@@ -176,7 +182,8 @@ function parseheader(s::AbstractString)
         s = parsechar(s, ':')
         s = strip(s)
         if key == "descr"
-            dict[key], s = parsedtype(s)
+            (descr, T), s = parsedtype(s)
+            dict[key] = descr
         elseif key == "fortran_order"
             dict[key], s = parsebool(s)
         elseif key == "shape"
@@ -196,10 +203,10 @@ function parseheader(s::AbstractString)
     if s != ""
         error("malformed header")
     end
-    Header(dict["descr"], dict["fortran_order"], dict["shape"])
+    Header{T}(dict["descr"], dict["fortran_order"], dict["shape"])
 end
 
-function npzreadarray(f::IO)
+function readheader(f::IO)
     @compat b = read!(f, Vector{UInt8}(undef, length(NPYMagic)))
     if b != NPYMagic
         error("not a numpy array file")
@@ -208,26 +215,33 @@ function npzreadarray(f::IO)
 
     # support for version 2 files
     if b[1] == 1
-        hdrlen = readle(f, UInt16)
+        hdrlen = UInt32(readle(f, UInt16))
     elseif b[1] == 2 
-        hdrlen = readle(f, UInt32)
+        hdrlen = UInt32(readle(f, UInt32))
     else
         error("unsupported NPZ version")
     end
 
     @compat hdr = ascii(String(read!(f, Vector{UInt8}(undef, hdrlen))))
-    hdr = parseheader(strip(hdr))
+    parseheader(strip(hdr))
+end
 
-    toh, typ = hdr.descr
+function _npzreadarray(f, hdr::Header{T}) where {T}
+    toh = hdr.descr
     if hdr.fortran_order
-        @compat x = map(toh, read!(f, Array{typ}(undef, hdr.shape...)))
+        @compat x = map(toh, read!(f, Array{T}(undef, hdr.shape)))
     else
-        @compat x = map(toh, read!(f, Array{typ}(undef, reverse(hdr.shape)...)))
+        @compat x = map(toh, read!(f, Array{T}(undef, reverse(hdr.shape))))
         if ndims(x) > 1
             x = permutedims(x, collect(ndims(x):-1:1))
         end
     end
-    x isa Array{<:Any, 0} ? x[1] : x
+    ndims(x) == 0 ? x[1] : x
+end
+
+function npzreadarray(f::IO)
+    hdr = readheader(f)
+    _npzreadarray(f, hdr)
 end
 
 function samestart(a::AbstractVector, b::AbstractVector)
@@ -287,7 +301,6 @@ function npzread(filename::AbstractString, vars...)
         close(f)
         error("not a NPY or NPZ/Zip file: $filename")
     end
-
     close(f)
     return data
 end
@@ -296,6 +309,41 @@ function npzread(dir::ZipFile.Reader,
     vars = map(f -> _maybetrimext(f.name), dir.files))
 
     Dict(_maybetrimext(f.name) => npzreadarray(f)
+        for f in dir.files 
+            if f.name in vars || _maybetrimext(f.name) in vars)
+end
+
+"""
+    readheader(filename, [vars...])
+
+Return a header or a collection of headers corresponding to each variable contained in `filename`. 
+The header contains information about the `eltype` and `size` of the array that may be extracted using 
+the corresponding accessor functions.
+"""
+function readheader(filename::AbstractString, vars...)
+    # Detect if the file is a numpy npy array file or a npz/zip file.
+    f = open(filename)
+    @compat b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
+
+    if samestart(b, ZIPMagic)
+        fz = ZipFile.Reader(filename)
+        data = readheader(fz, vars...)
+        close(fz)
+    elseif samestart(b, NPYMagic)
+        seekstart(f)
+        data = readheader(f)
+    else
+        close(f)
+        error("not a NPY or NPZ/Zip file: $filename")
+    end
+
+    close(f)
+    return data
+end
+function readheader(dir::ZipFile.Reader, 
+    vars = map(f -> _maybetrimext(f.name), dir.files))
+
+    Dict(_maybetrimext(f.name) => readheader(f)
         for f in dir.files 
             if f.name in vars || _maybetrimext(f.name) in vars)
 end

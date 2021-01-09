@@ -1,5 +1,7 @@
 using NPZ, Compat
 
+import NPZ: readheader
+
 @static if VERSION >= v"0.7.0-DEV.2575"
     using Test
 else
@@ -117,4 +119,23 @@ end
     f = tempname()
     npzwrite(f, zeros())
     @test npzread(f) == 0.0
+end
+
+@testset "readheader" begin
+    f = tempname()
+    arr = zeros(2,3)
+    npzwrite(f, arr)
+    hdr = readheader(f)
+    @test size(hdr) == size(arr)
+    @test ndims(hdr) == ndims(arr)
+    @test eltype(hdr) == eltype(arr)
+
+    npzwrite(f, ones(2,2), x = ones(Int,3), y = 3)
+    hdr = readheader(f)
+    @test size(hdr["arr_0"]) == (2,2)
+    @test eltype(hdr["arr_0"]) == eltype(npzread(f, ["arr_0"])["arr_0"])
+    @test size(hdr["x"]) == (3,)
+    @test eltype(hdr["x"]) == eltype(npzread(f, ["x"])["x"])
+    @test size(hdr["y"]) == ()
+    @test eltype(hdr["y"]) == eltype(npzread(f, ["y"])["y"])
 end
