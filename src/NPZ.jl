@@ -470,6 +470,7 @@ function npzwrite(filename::AbstractString, args...; kwargs...)
 end
 
 # support for FileIO
+load(file::File{format"NPY"}, vars...) = npzread(filename(file), vars...)
 load(file::File{format"NPZ"}, vars...) = npzread(filename(file), vars...)
 
 end # module
