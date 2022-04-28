@@ -4,7 +4,7 @@ module NPZ
 # NPZ file format is described in
 # https://github.com/numpy/numpy/blob/v1.7.0/numpy/lib/format.py
 
-using ZipFile, Compat
+using ZipFile, Compat, FileIO
 
 @static if VERSION >=  v"0.7.0-DEV.2575"
     import Base.CodeUnits
@@ -468,5 +468,8 @@ function npzwrite(filename::AbstractString, args...; kwargs...)
 
     npzwrite(filename, d)
 end
+
+# support for FileIO
+load(file::File{format"NPZ"}, vars...) = npzread(filename(file), vars...)
 
 end # module
