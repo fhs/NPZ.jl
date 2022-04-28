@@ -473,4 +473,7 @@ end
 load(file::File{format"NPY"}, vars...) = npzread(filename(file), vars...)
 load(file::File{format"NPZ"}, vars...) = npzread(filename(file), vars...)
 
+save(file::File{format"NPY"}, data, vars...) = npzwrite(filename(file), data, vars...)
+save(file::File{format"NPZ"}, data, vars...) = npzwrite(filename(file), data, vars...)
+
 end # module
