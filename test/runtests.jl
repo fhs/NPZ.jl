@@ -1,12 +1,6 @@
-using NPZ, Compat
-
+using NPZ
 import NPZ: readheader
-
-@static if VERSION >= v"0.7.0-DEV.2575"
-    using Test
-else
-    using Base.Test
-end
+using Test
 
 Debug = false
 

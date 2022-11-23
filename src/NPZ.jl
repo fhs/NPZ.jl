@@ -1,19 +1,10 @@
-__precompile__()
 module NPZ
 
 # NPZ file format is described in
 # https://github.com/numpy/numpy/blob/v1.7.0/numpy/lib/format.py
 
-using ZipFile, Compat, FileIO
-
-@static if VERSION >=  v"0.7.0-DEV.2575"
-    import Base.CodeUnits
-else
-    # CodeUnits not yet supported by Compat but not needed in julia 0.6...
-    # codeunits function in Compat returns uintX instead of codeunits
-    # therefore this 'stump' type should work
-    abstract type CodeUnits{U, S} end
-end
+using ZipFile, FileIO
+import Base.CodeUnits
 
 export npzread, npzwrite
 
@@ -39,20 +30,11 @@ const TypeMaps = [
     ("c8", Complex{Float32}),
     ("c16", Complex{Float64}),
 ]
-const Numpy2Julia = Dict{String, DataType}()
-for (s,t) in TypeMaps
-    Numpy2Julia[s] = t
-end
+const Numpy2Julia = Dict{String, DataType}(s => t for (s, t) in TypeMaps)
 
 const Julia2Numpy = Dict{DataType, String}()
 
-@static if VERSION >= v"0.4.0"
-    function __init__()
-        for (s,t) in TypeMaps
-            Julia2Numpy[t] = s
-        end
-    end
-else
+function __init__()
     for (s,t) in TypeMaps
         Julia2Numpy[t] = s
     end
@@ -207,11 +189,11 @@ function parseheader(s::AbstractString)
 end
 
 function readheader(f::IO)
-    @compat b = read!(f, Vector{UInt8}(undef, length(NPYMagic)))
+    b = read!(f, Vector{UInt8}(undef, length(NPYMagic)))
     if b != NPYMagic
         error("not a numpy array file")
     end
-    @compat b = read!(f, Vector{UInt8}(undef, length(Version)))
+    b = read!(f, Vector{UInt8}(undef, length(Version)))
 
     # support for version 2 files
     if b[1] == 1
@@ -221,17 +203,16 @@ function readheader(f::IO)
     else
         error("unsupported NPZ version")
     end
-
-    @compat hdr = ascii(String(read!(f, Vector{UInt8}(undef, hdrlen))))
+    hdr = ascii(String(read!(f, Vector{UInt8}(undef, hdrlen))))
     parseheader(strip(hdr))
 end
 
 function _npzreadarray(f, hdr::Header{T}) where {T}
     toh = hdr.descr
     if hdr.fortran_order
-        @compat x = map(toh, read!(f, Array{T}(undef, hdr.shape)))
+        x = map(toh, read!(f, Array{T}(undef, hdr.shape)))
     else
-        @compat x = map(toh, read!(f, Array{T}(undef, reverse(hdr.shape))))
+        x = map(toh, read!(f, Array{T}(undef, reverse(hdr.shape))))
         if ndims(x) > 1
             x = permutedims(x, collect(ndims(x):-1:1))
         end
@@ -288,7 +269,7 @@ Dict{String,Array{Float64,1}} with 1 entry:
 function npzread(filename::AbstractString, vars...)
     # Detect if the file is a numpy npy array file or a npz/zip file.
     f = open(filename)
-    @compat b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
+    b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
 
     if samestart(b, ZIPMagic)
         fz = ZipFile.Reader(filename)
@@ -323,7 +304,7 @@ the corresponding accessor functions.
 function readheader(filename::AbstractString, vars...)
     # Detect if the file is a numpy npy array file or a npz/zip file.
     f = open(filename)
-    @compat b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
+    b = read!(f, Vector{UInt8}(undef, MaxMagicLen))
 
     if samestart(b, ZIPMagic)
         fz = ZipFile.Reader(filename)
