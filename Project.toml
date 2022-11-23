@@ -1,6 +1,6 @@
 name = "NPZ"
 uuid = "15e1cf62-19b3-5cfa-8e77-841668bca605"
-version = "0.4.2"
+version = "0.4.3"
 
 [deps]
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
