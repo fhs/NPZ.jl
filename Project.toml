@@ -3,15 +3,13 @@ uuid = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 version = "0.4.2"
 
 [deps]
-Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
-Compat = "1, 2, 3, 4"
-ZipFile = "0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.10"
 FileIO = "1"
-julia = "0.7, 1"
+ZipFile = "0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.10"
+julia = "1.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
