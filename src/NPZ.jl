@@ -15,6 +15,7 @@ const Version = UInt8[1, 0]
 const MaxMagicLen = maximum(length.([NPYMagic, ZIPMagic]))
 
 const TypeMaps = [
+    ("?", Bool),
     ("b1", Bool),
     ("i1", Int8),
     ("i2", Int16),
@@ -126,7 +127,10 @@ function parsedtype(s::AbstractString)
     dtype, s = parsestring(s)
     c = dtype[firstindex(s)]
     t = SubString(dtype, nextind(s, 1))
-    if c == '<'
+    if isempty(t)
+        toh = identity
+        t = string(c)
+    elseif c == '<'
         toh = ltoh
     elseif c == '>'
         toh = ntoh
