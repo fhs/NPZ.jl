@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(NPZ, :DocTestSetup, :(using NPZ); recursive=true)
 
 makedocs(;
     modules=[NPZ],
-    repo="https://github.com/fhs/NPZ.jl/blob/{commit}{path}#L{line}",
+    repo=Remotes.GitHub("fhs", "NPZ.jl"),
     sitename="NPZ.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",

@@ -3,4 +3,4 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 
 [compat]
-Documenter = "0.27"
+Documenter = "1.3"
