@@ -133,3 +133,17 @@ end
     @test size(hdr["y"]) == ()
     @test eltype(hdr["y"]) == eltype(npzread(f, ["y"])["y"])
 end
+
+
+@testset "read_npz_lazy" begin
+    
+    ark = NPZ.npzread_lazy("data.npz")
+
+    arr_r = ark["range"]
+    @test arr_r == collect(Int64, 0:99)
+    
+    arr_l = ark["linspace"]
+    @test length(arr_l) == 50
+    @test arr_l[1] == 0.0
+    @test arr_l[50] == 1.0
+end
