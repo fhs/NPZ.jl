@@ -32,6 +32,12 @@ const TypeMaps = [
 ]
 const Numpy2Julia = Dict{String, DataType}(s => t for (s, t) in TypeMaps)
 
+# A numpy `U<N>` element is N UTF-32 code units; numpy drops trailing NULs when reading it
+decode(units::NTuple{N,UInt32}, toh) where {N} = String(rstrip(join(map(Char ∘ toh, units)), '\0'))
+
+decodedtype(::Type{T}) where {T} = T
+decodedtype(::Type{NTuple{N,UInt32}}) where {N} = String
+
 const Julia2Numpy = Dict{DataType, String}()
 
 function __init__()
@@ -135,6 +141,10 @@ function parsedtype(s::AbstractString)
     else
         error("parsing header failed: unsupported endian character $c")
     end
+    if startswith(t, 'U')
+        width = parse(Int, SubString(t, 2))
+        return (units -> decode(units, toh), NTuple{width,UInt32}), s
+    end
     if !haskey(Numpy2Julia, t)
         error("parsing header failed: unsupported type $t")
     end
@@ -149,7 +159,7 @@ end
 
 Header{T}(descr::F, fortran_order, shape::NTuple{N,Int}) where {T,N,F} = Header{T,N,F}(descr, fortran_order, shape)
 Base.size(hdr::Header) = hdr.shape
-Base.eltype(hdr::Header{T}) where T = T
+Base.eltype(hdr::Header{T}) where T = decodedtype(T)
 Base.ndims(hdr::Header{T,N}) where {T,N} = N
 
 function parseheader(s::AbstractString)

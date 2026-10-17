@@ -115,6 +115,24 @@ end
     @test npzread(f) == 0.0
 end
 
+@testset "numpy unicode strings" begin
+    dir = joinpath(@__DIR__, "numpy_strings")
+    words = ["J0030+0451", "", "αβγ", "😀x", "abcdefghijk"]
+    grid = ["a" "bb" "ccc"; "dddd" "" "ф"]
+    @testset for (file, expected, shape) in [
+            ("strings_le.npy", words, (5,)), ("strings_be.npy", words, (5,)),
+            ("strings_2d.npy", grid, (2, 3)), ("strings_fortran.npy", grid, (2, 3)),
+            ("string_0d.npy", "scalar", ())]
+        path = joinpath(dir, file)
+        x = npzread(path)
+        @test x == expected
+        @test typeof(x) == typeof(expected)
+        @test eltype(readheader(path)) == String
+        @test size(readheader(path)) == shape
+    end
+    @test npzread(joinpath(dir, "mixed.npz")) == Dict("names" => ["M13", "NGC_6760"], "dist" => [7.42, 8.41])
+end
+
 @testset "readheader" begin
     f = tempname()
     arr = zeros(2,3)
